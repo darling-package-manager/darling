@@ -33,6 +33,7 @@ fn modules() -> &'static [&'static dyn darling::PackageManager] {
 enum SubCommand {
     Install { package_name: String },
     Remove { package_name: String },
+    Rebuild,
     Reload,
 }
 
@@ -132,6 +133,32 @@ fn run(distro: &dyn darling::PackageManager, command: SubCommand) -> anyhow::Res
             std::fs::write(format!("{}/.config/darling/darling.toml", std::env::var("HOME")?), config.to_string())?;
             println!("{}", format!("Package \"{}\" installed successfully!", &package_entry.name).green().bold());
         }
+
+        SubCommand::Rebuild => {
+            let items = config.as_table();
+            for (name, package_item) in items {
+                println!("{} packages for module {}...", "Installing".green().bold(), name.cyan().bold());
+                let module = *modules()
+                    .iter()
+                    .find(|module| module.name() == name)
+                    .ok_or_else(|| anyhow::anyhow!("Corrupted config file: Module \"{}\" not found", name))?;
+                let toml_edit::Item::Table(packages) = package_item else {
+                    anyhow::bail!("Corrupted config file: Module \"{}\" is found, but isn't a table.", name)
+                };
+
+                for (package_name, _package_data) in packages {
+                    println!("\t{} package {}", "Installing".green().bold(), package_name.cyan().bold());
+                    module.install(
+                        &context,
+                        &darling::InstallationEntry {
+                            name: package_name.to_owned(),
+                            properties: std::collections::HashMap::new(),
+                        },
+                    )?;
+                }
+            }
+        }
+
         _ => unimplemented!(),
     };
 

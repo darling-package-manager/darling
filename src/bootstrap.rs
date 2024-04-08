@@ -11,11 +11,12 @@ impl darling::PackageManager for Darling {
 
     fn install(&self, context: &darling::Context, package: &darling::InstallationEntry) -> anyhow::Result<Option<String>> {
         // Add the crate dependency
-        let mut dependency = std::process::Command::new("cargo")
+        std::process::Command::new("cargo")
             .arg("add")
             .arg(format!("darling_{}", &package.name))
             .current_dir(&context.config.source_location)
-            .spawn()?;
+            .spawn()?
+            .wait()?;
 
         // Write to the include! file
         let module_file = std::fs::read_to_string(context.config.source_location.clone() + "/src/modules.rs")?;
@@ -27,15 +28,14 @@ impl darling::PackageManager for Darling {
         std::fs::write(context.config.source_location.clone() + "/src/modules.rs", lines.join("\n"))?;
 
         // Rebuild from source
-        dependency.wait()?;
         std::process::Command::new("cargo")
             .arg("build")
             .arg("--release")
             .current_dir(&context.config.source_location)
-            .spawn()?;
+            .spawn()?
+            .wait()?;
 
         // Get the version info
-        dependency.wait()?;
         let tree_info = String::from_utf8(
             std::process::Command::new("cargo")
                 .arg("tree")
@@ -58,7 +58,8 @@ impl darling::PackageManager for Darling {
             .arg("remove")
             .arg(format!("darling-{}", &package.name))
             .current_dir(&context.config.source_location)
-            .spawn()?;
+            .spawn()?
+            .wait()?;
 
         // Write to the module include! file
         let module_file_lines = std::fs::read_to_string(context.config.source_location.clone() + "/src/modules.rs")?
