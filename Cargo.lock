@@ -131,7 +131,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "darling-bin"
+name = "darling-binary"
 version = "0.1.0"
 dependencies = [
  "anyhow",
