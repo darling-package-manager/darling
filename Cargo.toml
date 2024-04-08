@@ -1,0 +1,24 @@
+[package]
+name = "darling_packages"
+version = "0.1.0"
+authors = ["Violet Iapalucci"]
+description = "A declarative and extendable package manager."
+edition = "2021"
+
+[[bin]]
+name = "darling"
+path = "src/main.rs"
+
+[dependencies]
+toml = "0.8.12"
+anyhow = "1.0.81"
+colored = "2.1.0"
+unindent = "0.2.3"
+toml_edit = "0.22.9"
+regex-macro = "0.2.0"
+clap = { version = "4.5.4", features = ["derive"] }
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
