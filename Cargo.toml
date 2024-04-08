@@ -1,5 +1,5 @@
 [package]
-name = "darling_bin"
+name = "darling-bin"
 version = "0.1.0"
 authors = ["Violet Iapalucci"]
 description = "A declarative and extendable package manager."
