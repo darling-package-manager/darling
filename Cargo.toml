@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["Violet Iapalucci"]
 description = "A declarative and extendable package manager."
 edition = "2021"
+license = "MIT"
 
 [[bin]]
 name = "darling"
