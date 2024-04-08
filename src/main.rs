@@ -34,7 +34,7 @@ enum SubCommand {
     Install { package_name: String },
     Remove { package_name: String },
     Rebuild,
-    Reload,
+    LoadInstalled,
 }
 
 /// Reads the config file, creating it if it doesn't exist.
@@ -75,48 +75,7 @@ fn run(distro: &dyn darling::PackageManager, command: SubCommand) -> anyhow::Res
     // Run the subcommand
     match command {
         SubCommand::Install { package_name } => {
-            let mut package = darling::InstallationEntry {
-                name: package_name,
-                properties: std::collections::HashMap::new(),
-            };
-
-            // Print an installation message
-            println!("{}", format!("Installing package \"{}\"...", &package.name).cyan().bold());
-
-            // Install the package in the system
-            let version = distro.install(&context, &package)?;
-            if let Some(mut version_string) = version {
-                version_string.replace_range(0..1, "=");
-                package.properties.insert("version".to_owned(), version_string);
-            }
-
-            // If no version is specified, set it to "latest"
-            if package.properties.get("version").is_none() {
-                package.properties.insert("version".to_owned(), "latest".to_owned());
-            }
-
-            // Serialize the package data into TOML
-            let mut properties_table: toml_edit::InlineTable = toml_edit::InlineTable::new();
-            for (key, value) in package.properties {
-                properties_table.insert(&key, toml_edit::Value::String(toml_edit::Formatted::new(value)));
-            }
-            properties_table.set_dotted(false);
-
-            // Get the packages table from the config file
-            let mut blank_table = toml_edit::Item::Table(toml_edit::Table::new());
-            let packages_item = config.get_mut(&distro.name()).unwrap_or(&mut blank_table).to_owned();
-            let toml_edit::Item::Table(mut packages) = packages_item else {
-                anyhow::bail!("Corrupted config file: \"{}\" is not a table", distro.name())
-            };
-
-            packages[&package.name] = toml_edit::Item::Value(toml_edit::Value::InlineTable(properties_table));
-            config.insert(&distro.name(), toml_edit::Item::Table(packages));
-
-            // Write the config file
-            std::fs::write(format!("{}/.config/darling/darling.toml", std::env::var("HOME")?), config.to_string())?;
-
-            // Print a success message
-            println!("{}", format!("Package \"{}\" installed successfully!", &package.name).green().bold());
+            install(distro, &context, &mut config, package_name, true)?;
         }
 
         SubCommand::Remove { package_name } => {
@@ -159,8 +118,61 @@ fn run(distro: &dyn darling::PackageManager, command: SubCommand) -> anyhow::Res
             }
         }
 
-        _ => unimplemented!(),
+        SubCommand::LoadInstalled => {
+            let installed = distro.get_all_explicit(&context)?;
+            for (package, version) in installed {
+                install(distro, &context, &mut config, package, false)?;
+            }
+        }
     };
+
+    Ok(())
+}
+
+fn install(distro: &dyn darling::PackageManager, context: &darling::Context, config: &mut toml_edit::DocumentMut, package_name: String, with_system: bool) -> anyhow::Result<()> {
+    let mut package = darling::InstallationEntry {
+        name: package_name,
+        properties: std::collections::HashMap::new(),
+    };
+
+    // Print an installation message
+    println!("{}", format!("Installing package \"{}\"...", &package.name).cyan().bold());
+
+    // Install the package in the system
+    if with_system {
+        let version = distro.install(context, &package)?;
+        if let Some(mut version_string) = version {
+            version_string.replace_range(0..1, "=");
+            package.properties.insert("version".to_owned(), version_string);
+        }
+    }
+
+    // If no version is specified, set it to "latest"
+    if package.properties.get("version").is_none() {
+        package.properties.insert("version".to_owned(), "latest".to_owned());
+    }
+
+    // Serialize the package data into TOML
+    let mut properties_table: toml_edit::InlineTable = toml_edit::InlineTable::new();
+    for (key, value) in package.properties {
+        properties_table.insert(&key, toml_edit::Value::String(toml_edit::Formatted::new(value)));
+    }
+    properties_table.set_dotted(false);
+
+    // Get the packages table from the config file
+    let mut blank_table = toml_edit::Item::Table(toml_edit::Table::new());
+    let packages_item = config.get_mut(&distro.name()).unwrap_or(&mut blank_table).to_owned();
+    let toml_edit::Item::Table(mut packages) = packages_item else {
+        anyhow::bail!("Corrupted config file: \"{}\" is not a table", distro.name())
+    };
+    packages[&package.name] = toml_edit::Item::Value(toml_edit::Value::InlineTable(properties_table));
+    config.insert(&distro.name(), toml_edit::Item::Table(packages));
+
+    // Write the config file
+    std::fs::write(format!("{}/.config/darling/darling.toml", std::env::var("HOME")?), config.to_string())?;
+
+    // Print a success message
+    println!("{}", format!("Package \"{}\" installed successfully!", &package.name).green().bold());
 
     Ok(())
 }

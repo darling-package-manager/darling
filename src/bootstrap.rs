@@ -71,11 +71,24 @@ impl darling::PackageManager for Darling {
         Ok(())
     }
 
-    fn get_all_explicit(&self, context: &darling::Context) -> anyhow::Result<Vec<String>> {
-        let module_pattern = regex_macro::regex!("^(.+)::PACKAGE_MANAGER,$");
-        std::fs::read_to_string(context.config.source_location.clone() + "/src/modules.rs")?
-            .lines()
-            .map(|line| Ok(module_pattern.captures(line).ok_or_else(|| anyhow::anyhow!("Malformatted cache file"))?[1].to_owned()))
-            .collect::<Result<Vec<_>, _>>()
+    fn get_all_explicit(&self, context: &darling::Context) -> anyhow::Result<Vec<(String, String)>> {
+        let tree_info = String::from_utf8(
+            std::process::Command::new("cargo")
+                .arg("tree")
+                .current_dir(&context.config.source_location)
+                .output()?
+                .stdout,
+        )?;
+        let version_pattern = regex_macro::regex!(r"(?ms).{3}\sdarling-(\w+)\s(\S+)");
+
+        let mut packages = Vec::new();
+        for dependency in version_pattern.captures_iter(&tree_info) {
+            if &dependency[1] == "api" {
+                continue;
+            }
+            packages.push((dependency[1].to_owned(), dependency[2].to_owned()));
+        }
+
+        Ok(packages)
     }
 }
