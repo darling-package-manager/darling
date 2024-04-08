@@ -1,5 +1,6 @@
 use clap::Parser as _;
 use colored::Colorize as _;
+use darling::InstallationEntry;
 use darling_api as darling;
 
 mod bootstrap;
@@ -75,7 +76,16 @@ fn run(distro: &dyn darling::PackageManager, command: SubCommand) -> anyhow::Res
     // Run the subcommand
     match command {
         SubCommand::Install { package_name } => {
-            install(distro, &context, &mut config, package_name, true)?;
+            install(
+                distro,
+                &context,
+                &mut config,
+                InstallationEntry {
+                    name: package_name,
+                    properties: std::collections::HashMap::new(),
+                },
+                true,
+            )?;
         }
 
         SubCommand::Remove { package_name } => {
@@ -121,7 +131,16 @@ fn run(distro: &dyn darling::PackageManager, command: SubCommand) -> anyhow::Res
         SubCommand::LoadInstalled => {
             let installed = distro.get_all_explicit(&context)?;
             for (package, version) in installed {
-                install(distro, &context, &mut config, package, false)?;
+                install(
+                    distro,
+                    &context,
+                    &mut config,
+                    InstallationEntry {
+                        name: package,
+                        properties: std::collections::HashMap::from([("version".to_owned(), version)]),
+                    },
+                    false,
+                )?;
             }
         }
     };
@@ -129,12 +148,13 @@ fn run(distro: &dyn darling::PackageManager, command: SubCommand) -> anyhow::Res
     Ok(())
 }
 
-fn install(distro: &dyn darling::PackageManager, context: &darling::Context, config: &mut toml_edit::DocumentMut, package_name: String, with_system: bool) -> anyhow::Result<()> {
-    let mut package = darling::InstallationEntry {
-        name: package_name,
-        properties: std::collections::HashMap::new(),
-    };
-
+fn install(
+    distro: &dyn darling::PackageManager,
+    context: &darling::Context,
+    config: &mut toml_edit::DocumentMut,
+    mut package: darling::InstallationEntry,
+    with_system: bool,
+) -> anyhow::Result<()> {
     // Print an installation message
     println!("{}", format!("Installing package \"{}\"...", &package.name).cyan().bold());
 
