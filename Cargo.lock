@@ -122,12 +122,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "darling-api"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d63a5aee56c03897a93d1395534f0c2c9f689065cd35de74e611db8c6911d400"
+dependencies = [
+ "anyhow",
+]
+
+[[package]]
+name = "darling-arch"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "47299f3d3bff3f8598d195b959e68f133a37c010dfaecf714a9814e9019d0079"
+dependencies = [
+ "anyhow",
+ "darling-api",
+]
+
+[[package]]
 name = "darling_packages"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
  "colored",
+ "darling-api",
+ "darling-arch",
  "regex-macro",
  "toml",
  "toml_edit",

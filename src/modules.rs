@@ -1,1 +1,3 @@
-&crate::bootstrap::PACKAGE_MANAGER,
+vec![
+	&crate::bootstrap::PACKAGE_MANAGER,
+]

@@ -1,8 +1,6 @@
 use clap::Parser as _;
 use colored::Colorize as _;
-use darling::{Context, DarlingConfig, InstallationEntry, PackageManager};
-use darling_packages as darling;
-use std::io::Write as _;
+use darling_api as darling;
 
 mod bootstrap;
 
@@ -28,41 +26,14 @@ static MODULES: std::sync::OnceLock<Vec<&'static dyn darling::PackageManager>> =
 
 #[allow(incomplete_include)]
 fn modules() -> &'static [&'static dyn darling::PackageManager] {
-    MODULES.get_or_init(|| vec![include!("./modules.rs")])
+    MODULES.get_or_init(|| include!("./modules.rs"))
 }
 
 #[derive(clap::Subcommand)]
 enum SubCommand {
     Install { package_name: String },
-    InstallModule { package_name: String },
     Remove { package_name: String },
     Reload,
-}
-
-pub fn install_module_without_cache_update(context: &darling::Context, module_name: &str) -> anyhow::Result<()> {
-    std::process::Command::new("cargo")
-        .arg("add")
-        .arg(format!("darling-{}", module_name))
-        .current_dir(&context.config.source_location)
-        .spawn()?;
-    let mut module_file = std::fs::OpenOptions::new().append(true).open(context.config.source_location.clone() + "/src/modules.rs")?;
-    writeln!(module_file, "{},", module_name)?;
-    Ok(())
-}
-
-pub fn uninstall_module_without_cache_update(context: &darling::Context, module_name: &str) -> anyhow::Result<()> {
-    std::process::Command::new("cargo")
-        .arg("remove")
-        .arg(format!("darling-{}", module_name))
-        .current_dir(&context.config.source_location)
-        .spawn()?;
-    let module_file_lines = std::fs::read_to_string(context.config.source_location.clone() + "/src/modules.rs")?
-        .lines()
-        .filter(|line| line != &format!("darling_{module_name}::PACKAGE_MANAGER,"))
-        .collect::<Vec<_>>()
-        .join("\n");
-    std::fs::write(context.config.source_location.clone() + "/src/modules.rs", module_file_lines)?;
-    Ok(())
 }
 
 /// Reads the config file, creating it if it doesn't exist.
@@ -74,7 +45,7 @@ fn read_config() -> anyhow::Result<toml_edit::DocumentMut> {
     if !std::path::Path::new(&format!("{home}/.config/darling/darling.toml", home = std::env::var("HOME")?)).exists() {
         std::fs::create_dir_all(format!("{home}/.config/darling/", home = std::env::var("HOME")?))
             .map_err(|err| anyhow::anyhow!(format!("Error creating config directory: {err:?}").red().bold()))?;
-        std::fs::write(format!("{home}/.config/darling/darling.toml", home = std::env::var("HOME")?), "[packages]")
+        std::fs::write(format!("{home}/.config/darling/darling.toml", home = std::env::var("HOME")?), "[module]")
             .map_err(|err| anyhow::anyhow!("Error writing initial config file: {err:?}"))?;
     }
 
@@ -94,14 +65,16 @@ fn read_config() -> anyhow::Result<toml_edit::DocumentMut> {
 ///
 /// # Returns
 /// An error if the program could not be run.
-fn run(distro: &dyn PackageManager, command: SubCommand) -> anyhow::Result<()> {
-    let context = Context { config: DarlingConfig::default() };
+fn run(distro: &dyn darling::PackageManager, command: SubCommand) -> anyhow::Result<()> {
+    let context = darling::Context {
+        config: darling::DarlingConfig::default(),
+    };
     let mut config = read_config()?;
 
     // Run the subcommand
     match command {
         SubCommand::Install { package_name } => {
-            let mut package = InstallationEntry {
+            let mut package = darling::InstallationEntry {
                 name: package_name,
                 properties: std::collections::HashMap::new(),
             };
@@ -110,15 +83,11 @@ fn run(distro: &dyn PackageManager, command: SubCommand) -> anyhow::Result<()> {
             println!("{}", format!("Installing package \"{}\"...", &package.name).cyan().bold());
 
             // Install the package in the system
-            distro.install(&context, &package)?;
-
-            // Get the packages table from the config file
-            let toml_edit::Item::Table(packages) = config
-                .get_mut("packages")
-                .ok_or_else(|| anyhow::anyhow!("Corrupted config file: No package field found".red().bold()))?
-            else {
-                anyhow::bail!("Corrupted config file: \"packages\" field exists in config, but is not a table".red().bold());
-            };
+            let version = distro.install(&context, &package)?;
+            if let Some(mut version_string) = version {
+                version_string.replace_range(0..1, "=");
+                package.properties.insert("version".to_owned(), version_string);
+            }
 
             // If no version is specified, set it to "latest"
             if package.properties.get("version").is_none() {
@@ -128,10 +97,19 @@ fn run(distro: &dyn PackageManager, command: SubCommand) -> anyhow::Result<()> {
             // Serialize the package data into TOML
             let mut properties_table: toml_edit::InlineTable = toml_edit::InlineTable::new();
             for (key, value) in package.properties {
-                properties_table[&key] = toml_edit::Value::String(toml_edit::Formatted::new(value));
+                properties_table.insert(&key, toml_edit::Value::String(toml_edit::Formatted::new(value)));
             }
             properties_table.set_dotted(false);
+
+            // Get the packages table from the config file
+            let mut blank_table = toml_edit::Item::Table(toml_edit::Table::new());
+            let packages_item = config.get_mut(&distro.name()).unwrap_or(&mut blank_table).to_owned();
+            let toml_edit::Item::Table(mut packages) = packages_item else {
+                anyhow::bail!("Corrupted config file: \"{}\" is not a table", distro.name())
+            };
+
             packages[&package.name] = toml_edit::Item::Value(toml_edit::Value::InlineTable(properties_table));
+            config.insert(&distro.name(), toml_edit::Item::Table(packages));
 
             // Write the config file
             std::fs::write(format!("{}/.config/darling/darling.toml", std::env::var("HOME")?), config.to_string())?;
@@ -141,7 +119,7 @@ fn run(distro: &dyn PackageManager, command: SubCommand) -> anyhow::Result<()> {
         }
 
         SubCommand::Remove { package_name } => {
-            let package_entry = InstallationEntry {
+            let package_entry = darling::InstallationEntry {
                 name: package_name,
                 properties: std::collections::HashMap::new(),
             };
