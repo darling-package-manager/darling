@@ -131,16 +131,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "darling-arch"
-version = "0.1.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "47299f3d3bff3f8598d195b959e68f133a37c010dfaecf714a9814e9019d0079"
-dependencies = [
- "anyhow",
- "darling-api",
-]
-
-[[package]]
 name = "darling_packages"
 version = "0.1.0"
 dependencies = [
@@ -148,7 +138,6 @@ dependencies = [
  "clap",
  "colored",
  "darling-api",
- "darling-arch",
  "regex-macro",
  "toml",
  "toml_edit",
