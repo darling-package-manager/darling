@@ -48,7 +48,9 @@ impl darling::PackageManager for Darling {
             .captures(&tree_info)
             .ok_or_else(|| anyhow::anyhow!("Error parsing version info for crate"))?[2]
             .to_owned();
-        version.replace_range(0..1, "=");
+        if version.starts_with('v') {
+            version.replace_range(0..1, "=");
+        }
         Ok(Some(version))
     }
 
