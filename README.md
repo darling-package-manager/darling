@@ -11,6 +11,8 @@ Darling allows existing package managers of almost any form to be managed declar
 
 ... and more.
 
+## Installation
+
 ### Manual
 
 Each time you add a new module to `darling`, The code must be rebuilt from source to include the new Rust library. Thus, the `darling` source code must always live on your machine. The default location that does not require configuration changes is to place the source at `~/.local/share/daring/soure`. You can locate it there as such:
@@ -37,4 +39,10 @@ Darling is designed specifically to be extendible *without changing darling itse
 - Create an empty struct that implements `darling::PackageManager`.
 	- Ensure that the `get_name()` function returns a consistent value on all calls, and that **it does not return "module"**. `module` is a built-in reserved name used by darling to manage itself. Also, it should be unique to other darling modules, or else they will be incompatible. It is convention to make it the name of your crate, without the `darling-` prefix. For example, the `darling
 - **Declare a `pub static` variable of your struct with the name `PACKAGE_MANAGER` that is accessible from your crate root.**
-- Publish your crate on `crates.io` with `cargo publish`j
+- Publish your crate on `crates.io` with `cargo publish`
+
+## Contributor notes
+
+For developers or contributors to the project, the following points should be noted:
+
+- use `git update-index --skip-worktree <FILENAME>` on `Cargo.toml`, `Cargo.lock`, and `src/modules.rs`. This allows you to use `darling` and install modules onto your machine without pushing those user-specific installations through git. If you need to add a new dependency, temporarily use `git update-index --no-skip-worktree` on `Cargo.toml` and `Cargo.lock` to add the dependency, and then skip them once more to prevent other changes from being pushed. If you do not plan on using/testing darling on your system and installing modules with it, then this point isn't necessary. Also, if you want to *use* darling but not necessarily test your development version, you could always develop in a location other than `~/.local/share/darling/source` and leave your usage version in that location.
