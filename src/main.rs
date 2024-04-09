@@ -178,8 +178,7 @@ fn install(
     // Install the package in the system
     if with_system {
         let version = distro.install(context, &package)?;
-        if let Some(mut version_string) = version {
-            version_string.replace_range(0..1, "=");
+        if let Some(version_string) = version {
             package.properties.insert("version".to_owned(), version_string);
         }
     }

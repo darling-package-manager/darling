@@ -44,12 +44,12 @@ impl darling::PackageManager for Darling {
                 .stdout,
         )?;
         let version_pattern = regex_macro::regex!(r"(?ms).{3}\s(\w+)\s(\S+)");
-        Ok(Some(
-            version_pattern
-                .captures(&tree_info)
-                .ok_or_else(|| anyhow::anyhow!("Error parsing version info for crate"))?[2]
-                .to_owned(),
-        ))
+        let mut version = version_pattern
+            .captures(&tree_info)
+            .ok_or_else(|| anyhow::anyhow!("Error parsing version info for crate"))?[2]
+            .to_owned();
+        version.replace_range(0..1, "=");
+        Ok(Some(version))
     }
 
     fn uninstall(&self, context: &darling::Context, package: &darling::InstallationEntry) -> anyhow::Result<()> {
