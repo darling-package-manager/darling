@@ -2,6 +2,7 @@ use clap::Parser as _;
 use colored::Colorize as _;
 use darling::InstallationEntry;
 use darling_api as darling;
+use std::io::Write as _;
 
 /// The bootstrap module. This can essentially be thought of as `darling-darling`. This module uses `darling` to
 /// manage its own modules.
@@ -16,6 +17,7 @@ fn main() -> anyhow::Result<()> {
         .iter()
         .find(|module| module.name() == args.module)
         .ok_or_else(|| anyhow::anyhow!("Module \"{}\" not found", args.module))?;
+    println!();
     run(module, args.command)?;
     Ok(())
 }
@@ -132,16 +134,25 @@ fn run(distro: &dyn darling::PackageManager, command: SubCommand) -> anyhow::Res
                     anyhow::bail!("Corrupted config file: Module \"{}\" is found, but isn't a table.", name)
                 };
 
+                let all = module.get_all_explicit(&context)?.into_iter().map(|tuple| tuple.0).collect::<Vec<_>>();
+
                 for (package_name, _package_data) in packages {
-                    println!("\t{} package {}", "Installing".green().bold(), package_name.cyan().bold());
-                    module.install(
-                        &context,
-                        &darling::InstallationEntry {
-                            name: package_name.to_owned(),
-                            properties: std::collections::HashMap::new(),
-                        },
-                    )?;
+                    print!("\t{} package {}... ", "Installing".green().bold(), package_name.cyan().bold());
+                    std::io::stdout().flush()?;
+                    if all.contains(&package_name.to_owned()) {
+                        println!("Already installed. {}", "Skipping.".yellow().bold());
+                    } else {
+                        module.install(
+                            &context,
+                            &darling::InstallationEntry {
+                                name: package_name.to_owned(),
+                                properties: std::collections::HashMap::new(),
+                            },
+                        )?;
+                        println!("{}", "Done!".green().bold());
+                    }
                 }
+                println!();
             }
         }
 
