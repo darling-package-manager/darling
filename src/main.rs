@@ -3,8 +3,13 @@ use colored::Colorize as _;
 use darling::InstallationEntry;
 use darling_api as darling;
 
+/// The bootstrap module. This can essentially be thought of as `darling-darling`. This module uses `darling` to
+/// manage its own modules.
 mod bootstrap;
 
+/// The main function of the binary executable. This runs the `darling` command with the arguments
+/// passed on the command line, and returns an error if anything goes wrong during execution (malformatted input,
+/// network error installing a package, package doesn't exist, etc.)
 fn main() -> anyhow::Result<()> {
     let args = Args::try_parse()?;
     let module = *modules()
@@ -15,21 +20,33 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
+/// The command-line arguments passed to the `darling` executable. This is automatially parsed by `clap`.
+/// using `Args::parse()` or `Args::try_parse()`
 #[derive(clap::Parser)]
 struct Args {
+    /// The module to run the subcommand on, i.e. `arch` or `npm`.
     module: String,
 
+    /// The command to run, such as `install` or `uninstall`.
     #[command(subcommand)]
     command: SubCommand,
 }
 
+/// The modules that are currently present. These act as "plugins" to `darling`, adding new package management
+/// systems to the program. This is a lazily-evaluated static (hence the `OnceLock`) via the [modules] function.
 static MODULES: std::sync::OnceLock<Vec<&'static dyn darling::PackageManager>> = std::sync::OnceLock::new();
 
+/// Fetches, or initializes (if it is not yet initialized) the [MODULES] for this build. This returns the data
+/// as a slice to the underlying `Vec` stored in `MODULES`. This is loaded by reading the file at `./modules.rs`,
+/// which is edited manually by the `darling` application itself.
 #[allow(incomplete_include)]
 fn modules() -> &'static [&'static dyn darling::PackageManager] {
     MODULES.get_or_init(|| include!("./modules.rs"))
 }
 
+/// A subcommand for a specific module in the program. For example, in a call to `darling arch install ripgrep` or
+/// `darling module install npm`, this represents the `install` portion of the command. This is automatically parsed
+/// by `clap` when using the [Args] struct.
 #[derive(clap::Subcommand)]
 enum SubCommand {
     Install { package_name: String },
