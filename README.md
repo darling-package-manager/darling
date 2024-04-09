@@ -11,8 +11,6 @@ Darling allows existing package managers of almost any form to be managed declar
 
 ... and more.
 
-## Installation
-
 ### Manual
 
 Each time you add a new module to `darling`, The code must be rebuilt from source to include the new Rust library. Thus, the `darling` source code must always live on your machine. The default location that does not require configuration changes is to place the source at `~/.local/share/daring/soure`. You can locate it there as such:
