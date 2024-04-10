@@ -13,7 +13,7 @@ impl darling::PackageManager for Darling {
         // Add the crate dependency
         std::process::Command::new("cargo")
             .arg("add")
-            .arg(format!("darling_{}", &package.name))
+            .arg(format!("darling-{}", &package.name))
             .current_dir(&context.config.source_location)
             .spawn()?
             .wait()?;
