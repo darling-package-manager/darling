@@ -9,7 +9,7 @@ impl darling::PackageManager for Darling {
         "module".to_owned()
     }
 
-    fn install(&self, context: &darling::Context, package: &darling::InstallationEntry) -> anyhow::Result<Option<String>> {
+    fn install(&self, context: &darling::Context, package: &darling::InstallationEntry) -> anyhow::Result<()> {
         // Add the crate dependency
         std::process::Command::new("cargo")
             .arg("add")
@@ -35,23 +35,7 @@ impl darling::PackageManager for Darling {
             .spawn()?
             .wait()?;
 
-        // Get the version info
-        let tree_info = String::from_utf8(
-            std::process::Command::new("cargo")
-                .arg("tree")
-                .current_dir(&context.config.source_location)
-                .output()?
-                .stdout,
-        )?;
-        let version_pattern = regex_macro::regex!(r"(?ms).{3}\s(\w+)\s(\S+)");
-        let mut version = version_pattern
-            .captures(&tree_info)
-            .ok_or_else(|| anyhow::anyhow!("Error parsing version info for crate"))?[2]
-            .to_owned();
-        if version.starts_with('v') {
-            version.replace_range(0..1, "=");
-        }
-        Ok(Some(version))
+        Ok(())
     }
 
     fn uninstall(&self, context: &darling::Context, package: &darling::InstallationEntry) -> anyhow::Result<()> {

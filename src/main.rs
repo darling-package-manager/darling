@@ -188,10 +188,15 @@ fn install(
 
     // Install the package in the system
     if with_system {
-        let version = distro.install(context, &package)?;
-        if let Some(version_string) = version {
-            package.properties.insert("version".to_owned(), version_string);
-        }
+        distro.install(context, &package)?;
+        let version = distro
+            .get_all_explicit(context)?
+            .iter()
+            .find(|(pack, _ver)| pack == &package.name)
+            .ok_or_else(|| anyhow::anyhow!("Package {} was just installed explicitly, yet no version information could be found for it!", &package.name))?
+            .1
+            .to_owned();
+        package.properties.insert("version".to_owned(), version);
     }
 
     // If no version is specified, set it to "latest"
