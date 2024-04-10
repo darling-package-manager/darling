@@ -18,7 +18,7 @@ unindent = "0.2.3"
 toml_edit = "0.22.9"
 regex-macro = "0.2.0"
 clap = { version = "4.5.4", features = ["derive"] }
-darling-api = "0.1.1"
+darling-api = "0.1.2"
 
 [profile.release]
 lto = true
