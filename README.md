@@ -95,6 +95,28 @@ wget = { version = "1.24.5-1" }
 
 ## Implementing Darling
 
+### Implementing From Template
+
+[darling-template](https://github.com/darling-package-manager/darling-template) provides a starting point for implementing darling. To use it, first set the template up onto your local machine:
+
+#### With version contol
+
+Open the repository and click "Use this template > Create a new repository". This will set up a git repo that you can clone onto your local machine and begin development with git immediately.
+
+#### Without version control
+
+If you don't want to make a git repository for your project right now, you can just clone the template to get it onto your local machine.
+
+#### Next steps
+
+Next, rename the struct and implement the missing methods. Read the documentation for each method carefully to understand what it must do and not do. **Do not rename the global `PACKAGE_MANAGER` variable**.
+
+Edit your crate name in `Cargo.toml`, and ensure it starts with `darling-`, such as `darling-npm` or `darling-vscode`. Publish your crate when it's done!
+
+That's it! once your crate is published, it can be used by anyone with darling, no updates required.
+
+### Manual Implementation
+
 Darling is designed specifically to be extendible *without changing darling itself*. This means that new package-related tools can add their own support for darling. `darling` uses a very specific protocol for creating modules. The process is as follows:
 
 - Create a rust (library) project. **It must start with `darling-`**. For example, `cargo new darling-example --lib`. Ensure that your name isn't taken on `crates.io`.
