@@ -27,6 +27,10 @@ impl darling::PackageManager for Darling {
         lines.push("]");
         std::fs::write(context.config.source_location.clone() + "/src/modules.rs", lines.join("\n"))?;
 
+        Ok(())
+    }
+
+    fn post_install(&self, context: &darling::Context) -> anyhow::Result<()> {
         // Rebuild from source
         std::process::Command::new("cargo")
             .arg("build")

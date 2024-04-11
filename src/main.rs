@@ -190,6 +190,7 @@ fn install(
     // Install the package in the system
     if with_system {
         distro.install(context, &package)?;
+        distro.post_install(context);
         let version = distro
             .get_all_explicit(context)?
             .iter()
