@@ -8,10 +8,18 @@ Darling allows existing package managers of almost any form to be managed declar
 - OS Package managers like `pacman`, `apt`, `dnf`, etc.
 - NodeJS global packages
 - Visual Studio Code extensions
+- Global cargo packages
 
 ... and more.
 
 ## Installation
+
+### With `cargo` and [darling-installer](https://github.com/darling-package-manager/darling-installer) (Recommended)
+
+```bash
+cargo install darling-installer
+install-darling
+```
 
 ### Manual
 
@@ -26,7 +34,7 @@ mv darling ~/.local/share/darling/source
 In your `.bashrc` (or somewhere that you edit your `$PATH`) add:
 
 ```bash
-export $PATH="$PATH:~/.local/share/darling/source/target/release
+export PATH="$PATH:~/.local/share/darling/source/target/release
 ```
 
 Also, ensure you build the project at least once, by `cd`ing into the `source` directory and running `cargo build --release`. After that, `darling` will rebuild itself when new modules are added.
