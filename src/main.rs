@@ -105,6 +105,7 @@ fn run(distro: &dyn darling::PackageManager, command: SubCommand) -> anyhow::Res
                 },
                 true,
             )?;
+            distro.post_install(&context)?;
         }
 
         SubCommand::Remove { package_name } => {
@@ -152,6 +153,7 @@ fn run(distro: &dyn darling::PackageManager, command: SubCommand) -> anyhow::Res
                         println!("{}", "Done!".green().bold());
                     }
                 }
+                module.post_install(&context)?;
                 println!("{} installing packages for module {}!", "Finished".green().bold(), name.cyan().bold());
                 println!();
             }
@@ -171,6 +173,7 @@ fn run(distro: &dyn darling::PackageManager, command: SubCommand) -> anyhow::Res
                     false,
                 )?;
             }
+            distro.post_install(&context)?;
         }
     };
 
@@ -190,7 +193,6 @@ fn install(
     // Install the package in the system
     if with_system {
         distro.install(context, &package)?;
-        distro.post_install(context)?;
         let version = distro
             .get_all_explicit(context)?
             .iter()
