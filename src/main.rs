@@ -22,8 +22,6 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-/// The command-line arguments passed to the `darling` executable. This is automatially parsed by `clap`.
-/// using `Args::parse()` or `Args::try_parse()`
 #[derive(clap::Parser)]
 struct Args {
     /// The module to run the subcommand on, i.e. `arch` or `npm`.
@@ -46,9 +44,6 @@ fn modules() -> &'static [&'static dyn darling::PackageManager] {
     MODULES.get_or_init(|| include!("./modules.rs"))
 }
 
-/// A subcommand for a specific module in the program. For example, in a call to `darling arch install ripgrep` or
-/// `darling module install npm`, this represents the `install` portion of the command. This is automatically parsed
-/// by `clap` when using the [Args] struct.
 #[derive(clap::Subcommand)]
 enum SubCommand {
     Install { package_name: String },
@@ -160,6 +155,7 @@ fn run(distro: &dyn darling::PackageManager, command: SubCommand) -> anyhow::Res
         }
 
         SubCommand::LoadInstalled => {
+            println!("{} all installed {} packages into config...", "Loading".green().bold(), distro.name().bold().cyan());
             let installed = distro.get_all_explicit(&context)?;
             for (package, version) in installed {
                 install(
@@ -174,6 +170,7 @@ fn run(distro: &dyn darling::PackageManager, command: SubCommand) -> anyhow::Res
                 )?;
             }
             distro.post_install(&context)?;
+            println!("{} loading all installed {} packages into config!", "Finished".green().bold(), distro.name().bold().cyan());
         }
     };
 
@@ -187,11 +184,9 @@ fn install(
     mut package: darling::InstallationEntry,
     with_system: bool,
 ) -> anyhow::Result<()> {
-    // Print an installation message
-    println!("{}", format!("Installing package \"{}\"...", &package.name).cyan().bold());
-
     // Install the package in the system
     if with_system {
+        println!("{}", format!("Installing package \"{}\"...", &package.name).cyan().bold());
         distro.install(context, &package)?;
         let version = distro
             .get_all_explicit(context)?
@@ -201,6 +196,9 @@ fn install(
             .1
             .to_owned();
         package.properties.insert("version".to_owned(), version);
+    } else {
+        print!("\t{} package {} to config... ", "Adding".green().bold(), &package.name.cyan().bold());
+        std::io::stdout().flush()?;
     }
 
     // If no version is specified, set it to "latest"
@@ -228,7 +226,11 @@ fn install(
     std::fs::write(format!("{}/.config/darling/darling.toml", std::env::var("HOME")?), config.to_string())?;
 
     // Print a success message
-    println!("{}", format!("Package \"{}\" installed successfully!", &package.name).green().bold());
+    if with_system {
+        println!("{}", format!("Package \"{}\" installed successfully!", &package.name).green().bold());
+    } else {
+        println!("{}", "Done!".green().bold());
+    }
 
     Ok(())
 }
