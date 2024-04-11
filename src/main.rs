@@ -140,7 +140,7 @@ fn run(distro: &dyn darling::PackageManager, command: SubCommand) -> anyhow::Res
                     print!("\t{} package {}... ", "Installing".green().bold(), package_name.cyan().bold());
                     std::io::stdout().flush()?;
                     if all.contains(&package_name.to_owned()) {
-                        println!("Already installed. {}", "Skipping.".yellow().bold());
+                        println!("Already installed and up to date. {}", "Skipping.".yellow().bold());
                     } else {
                         module.install(
                             &context,
@@ -152,6 +152,7 @@ fn run(distro: &dyn darling::PackageManager, command: SubCommand) -> anyhow::Res
                         println!("{}", "Done!".green().bold());
                     }
                 }
+                println!("{} installing packages for module {}!", "Finished".green().bold(), name.cyan().bold());
                 println!();
             }
         }
