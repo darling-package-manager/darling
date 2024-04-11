@@ -52,7 +52,7 @@ fn modules() -> &'static [&'static dyn darling::PackageManager] {
 #[derive(clap::Subcommand)]
 enum SubCommand {
     Install { package_name: String },
-    Remove { package_name: String },
+    Uninstall { package_name: String },
     Rebuild,
     LoadInstalled,
 }
@@ -108,7 +108,7 @@ fn run(distro: &dyn darling::PackageManager, command: SubCommand) -> anyhow::Res
             distro.post_install(&context)?;
         }
 
-        SubCommand::Remove { package_name } => {
+        SubCommand::Uninstall { package_name } => {
             let package_entry = darling::InstallationEntry {
                 name: package_name,
                 properties: std::collections::HashMap::new(),
