@@ -1,5 +1,7 @@
 # darling
 
+**!! Warning! Darling is in its development phase and has not reached 1.0 yet. Breaking changes will occur.**
+
 **D**eclarative **A**nd **R**eproducable **LIN**ux **G**eneralized
 
 An extendable and declarative package management system for Linux.
@@ -10,7 +12,14 @@ Darling allows existing package managers of almost any form to be managed declar
 - Visual Studio Code extensions
 - Global cargo packages
 
-... and more.
+... and more. The specific list of currently known modules is as follows:
+
+- [darling-arch](https://github.com/darling-package-manager/darling-arch) - Manages arch linux pacman packages
+- [darling-cargo](https://github.com/darling-package-manager/darling-cargo) - Manages global cargo crates
+- [darling-npm](https://github.com/darling-package-manager/darling-npm) - Manages global NPM packages
+- [darling-vscode](https://github.com/darling-package-manager/darling-vscode) - Manages Visual Studio Code (and Codium) extensions
+
+Darling also has a built in module to manage itself; So all darling modules are tracked with darling.
 
 ## Installation
 
@@ -21,7 +30,9 @@ cargo install darling-installer
 install-darling
 ```
 
-### Manual
+### Manual Installation
+
+If for some reason you don't want to install darling through cargo and `darling-installer`, you can install it manually. This isn't recommended because there's a few steps to the process and you can easily mess things up, and *you still need cargo to do it anyway*.
 
 Each time you add a new module to `darling`, The code must be rebuilt from source to include the new Rust library. Thus, the `darling` source code must always live on your machine. The default location that does not require configuration changes is to place the source at `~/.local/share/daring/soure`. You can locate it there as such:
 
@@ -44,7 +55,7 @@ Also, ensure you build the project at least once, by `cd`ing into the `source` d
 First, install your module of choice. The list of (known) available modules is covered below. We'll use Arch Linux's `pacman` as an example. 
 - First, run `darling module install arch` to install the Arch module. 
 - Optionally, you can run `darling arch load-installed` to load all existing *explicitly* (not dependencies) installed `pacman` packages on your system. Note that this often adds hardware-specific packages that shouldn't be tracked by `darling` and generally should go through manual review.
-- When you want to install a package, instead of running something like `pacman -S ripgrep`, you can run `darling arch install ripgrep`, which will install the package through your system through `pacman`, but also add `ripgrep` to your declarative configuration file (`~/.config/darling/darling.toml`). Alternatively, you can employ a NixOS-style workflow, and manually insert your package into your configuration file, and then run `darling arch reload` to ensure all packages listed in the declarative configuration are installed.
+- When you want to install a package, instead of running something like `pacman -S ripgrep`, you can run `darling arch install ripgrep`, which will install the package through your system through `pacman`, but also add `ripgrep` to your declarative configuration file (`~/.config/darling/darling.toml`). Alternatively, you can employ a NixOS-style workflow, and manually insert your package into your configuration file, and then run `darling arch rebuild` to ensure all packages listed in the declarative configuration are installed.
 
 ### Configuration Schema
 
@@ -95,6 +106,8 @@ wget = { version = "1.24.5-1" }
 
 ## Implementing Darling
 
+Darling is designed specifically to be extendible *without changing darling itself*. This means that new package-related tools can add their own support for darling. `darling` uses a very specific protocol for creating modules. You can either use a prebuild template or start from scratch.
+
 ### Implementing From Template
 
 [darling-template](https://github.com/darling-package-manager/darling-template) provides a starting point for implementing darling. To use it, first set the template up onto your local machine:
@@ -117,9 +130,9 @@ That's it! once your crate is published, it can be used by anyone with darling, 
 
 ### Manual Implementation
 
-Darling is designed specifically to be extendible *without changing darling itself*. This means that new package-related tools can add their own support for darling. `darling` uses a very specific protocol for creating modules. The process is as follows:
+Alternatively, you can start from scratch and create a module without using a template. The process is as follows:
 
-- Create a rust (library) project. **It must start with `darling-`**. For example, `cargo new darling-example --lib`. Ensure that your name isn't taken on `crates.io`.
+- Create a rust (library) project. **It must start with `darling-`** (technically `darling_` is also allowed, but not the convention). For example, `cargo new darling-example --lib`. Ensure that your name isn't taken on [crates.io](https://crates.io).
 - Add `darling-api` to your dependencies with `cargo add darling-api`.
 - Create an empty struct that implements `darling::PackageManager`.
 	- Ensure that the `get_name()` function returns a consistent value on all calls, and that **it does not return "module"**. `module` is a built-in reserved name used by darling to manage itself. Also, it should be unique to other darling modules, or else they will be incompatible. It is convention to make it the name of your crate, without the `darling-` prefix. For example, the `darling
