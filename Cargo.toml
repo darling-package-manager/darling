@@ -5,6 +5,7 @@ authors = ["Violet Iapalucci"]
 description = "A declarative and extendable package manager."
 edition = "2021"
 license = "MIT"
+readme = "README.md"
 
 [[bin]]
 name = "darling"
