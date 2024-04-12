@@ -7,7 +7,7 @@ pub static PACKAGE_MANAGER: Darling = Darling;
 
 pub struct Darling;
 
-const OFFICIAL_MODULES: &[&str] = &["arch", "module", "npm", "vscode"];
+const OFFICIAL_MODULES: &[&str] = &["arch", "cargo", "module", "npm", "vscode"];
 
 impl darling::PackageManager for Darling {
     fn name(&self) -> String {
