@@ -3,13 +3,21 @@ use std::io::Write as _;
 use colored::Colorize as _;
 use darling_api as darling;
 
+/// The package manager for darling to manage itself.
 pub static PACKAGE_MANAGER: Darling = Darling;
 
+/// The darling package manager type, which implements `darling::PackageManager`
 pub struct Darling;
 
+/// "Official" modules are modules uploded on the `darling` GitHub (https://github.com/darling-package/manager) -
+/// These are modules that are considered "safe" and shouldn't contain any malicious code. This slice lists them
+/// so that if a user installs a module that is not in here, we can check and give a warning in that case that
+/// it's community-made and may contain malicious code.
 const OFFICIAL_MODULES: &[&str] = &["arch", "cargo", "module", "npm", "vscode"];
 
 impl darling::PackageManager for Darling {
+    // TODO: Currently this returns "module" so that commands read as "darling module install arch" etc.,
+    // but we are considering renaming this to "core".
     fn name(&self) -> String {
         "module".to_owned()
     }
