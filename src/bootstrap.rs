@@ -22,7 +22,7 @@ impl darling::PackageManager for Darling {
                 "Warning:".yellow().bold(),
                 package.name.cyan().bold()
             );
-            print!("Continue? (Y/n): ");
+            print!("Would you still like to install it? (Y/n): ");
             std::io::stdout().flush()?;
             let mut buffer = String::new();
             std::io::stdin().read_line(&mut buffer)?;
