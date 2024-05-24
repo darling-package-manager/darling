@@ -135,7 +135,7 @@ Alternatively, you can start from scratch and create a module without using a te
 - Create a rust (library) project. **It must start with `darling-`** (technically `darling_` is also allowed, but not the convention). For example, `cargo new darling-example --lib`. Ensure that your name isn't taken on [crates.io](https://crates.io).
 - Add `darling-api` to your dependencies with `cargo add darling-api`.
 - Create an empty struct that implements `darling::PackageManager`.
-	- Ensure that the `get_name()` function returns a consistent value on all calls, and that **it does not return "module"**. `module` is a built-in reserved name used by darling to manage itself. Also, it should be unique to other darling modules, or else they will be incompatible. It is convention to make it the name of your crate, without the `darling-` prefix. For example, the `darling
+	- Ensure that the `get_name()` function returns a consistent value on all calls, and that **it does not return "module"**. `module` is a built-in reserved name used by darling to manage itself. Also, it should be unique to other darling modules, or else they will be incompatible. It is convention to make it the name of your crate, without the `darling-` prefix. For example, the `darling-example` module would return `"example"`.
 - **Declare a `pub static` variable of your struct with the name `PACKAGE_MANAGER` that is accessible from your crate root.**
 - Publish your crate on `crates.io` with `cargo publish`
 
